@@ -1,6 +1,6 @@
 
 import 'dart:async';
-
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
@@ -21,6 +21,23 @@ class _MyAppState extends State<MyApp> {
   LatLng _lastMapPosition = _center;
 
   MapType _currentMapType = MapType.normal;
+  GoogleMap _mapView;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    _mapView =  GoogleMap(
+      onMapCreated: _onMapCreated,
+      initialCameraPosition: CameraPosition(
+        target: _center,
+        zoom: 11.0,
+      ),
+      mapType: _currentMapType,
+      markers: _markers,
+      onCameraMove: _onCameraMove,
+    );
+
+  }
 
   void _onMapTypeButtonPressed() {
     setState(() {
@@ -45,6 +62,13 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  Future<void> _onGetMyLocationPressed() async {
+    var position = await Geolocator().getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    final GoogleMapController controller = await _controller.future;
+    CameraPosition current = CameraPosition(target: LatLng(position.latitude, position.longitude),zoom: 14.0);
+    controller.animateCamera(CameraUpdate.newCameraPosition(current));
+  }
+
   void _onCameraMove(CameraPosition position) {
     _lastMapPosition = position.target;
   }
@@ -63,16 +87,7 @@ class _MyAppState extends State<MyApp> {
         ),
         body: Stack(
           children: <Widget>[
-            GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: CameraPosition(
-                target: _center,
-                zoom: 11.0,
-              ),
-              mapType: _currentMapType,
-              markers: _markers,
-              onCameraMove: _onCameraMove,
-            ),
+           _mapView,
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Align(
@@ -92,6 +107,13 @@ class _MyAppState extends State<MyApp> {
                       backgroundColor: Colors.green,
                       child: const Icon(Icons.add_location, size: 36.0),
                     ),
+                    SizedBox(height: 16.0),
+                    FloatingActionButton(
+                      onPressed: _onGetMyLocationPressed,
+                      materialTapTargetSize: MaterialTapTargetSize.padded,
+                      backgroundColor: Colors.green,
+                      child: const Icon(Icons.location_searching, size: 36.0),
+                    )
                   ],
                 ),
               ),
